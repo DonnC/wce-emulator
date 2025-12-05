@@ -10,7 +10,7 @@ const { constructWebhookPayload } = require("./utils/webhookConstructor");
 
 const PORT = 3001;
 
-// CONFIGURATION: Change this to your bot's webhook URL
+// TODO: Change this to your bot's webhook URL
 const BOT_WEBHOOK_URL = process.env.BOT_WEBHOOK_URL || "http://localhost:8000/api/whatsapp/webhook";
 
 const app = express();

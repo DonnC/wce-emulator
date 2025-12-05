@@ -78,7 +78,17 @@ WCE is an extension of my work building robust, template-driven, professional to
     npm run postinstall
     ```
 
-3.  **Run the Suite:**
+3.  **Setup ChatBot Webhook**
+    For the bridge to listen and send messages to your ChatBot. Set your webhook url to your `env` var with key: `BOT_WEBHOOK_URL`
+
+    Or edit the line in [bridge/index.js](/bridge/index.js)
+
+    ```js
+    // TODO: Change this to your bot's webhook URL
+    const BOT_WEBHOOK_URL = process.env.BOT_WEBHOOK_URL || "<YOUR-CHATBOT-WEBHOOK-URL>";
+    ```
+
+4.  **Run the Suite:**
     Start both the Bridge and the Emulator with a single command:
 
     ```bash
