@@ -6,10 +6,10 @@
   "main": "index.js",
   "scripts": {
     "postinstall": "npm run install-all",
-    "install-all": "cd emulator && yarn install && cd ../bridge && npm install",
+    "install-all": "cd emulator && npm install && cd ../bridge && npm install",
     "dev": "concurrently \"npm:dev:bridge\" \"npm:dev:emulator\"",
-    "dev:bridge": "node --watch bridge/index.js",
-    "dev:emulator": "cd emulator && yarn dev"
+    "dev:bridge": "node bridge/index.js",
+    "dev:emulator": "cd emulator && npm run dev"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

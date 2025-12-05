@@ -5,6 +5,8 @@ import { DemoToolbar } from "@/components/DemoToolbar";
 import { ChatMessage, SimpleUIMessage, UIReply } from "@/types/message";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Trash2 } from 'lucide-react';
+import { useChatPersistence } from "@/hooks/use-chat-persistence";
 
 const Index = () => {
   return (
@@ -16,7 +18,8 @@ const Index = () => {
 
 const WhatsAppEmulator = () => {
   const { socket, isConnected } = useSocket();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const { messages, setMessages, clearPersistence } = useChatPersistence();
 
   useEffect(() => {
     if (!socket) return;
@@ -149,9 +152,11 @@ const WhatsAppEmulator = () => {
   };
 
   const handleClearMessages = () => {
-    setMessages([]);
-    toast.info("Messages cleared");
-  };
+    if (confirm("Are you sure you want to delete the persistence file and clear chats?")) {
+        clearPersistence();
+        toast.info('Chat history and persistence file deleted');
+    }
+};
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">

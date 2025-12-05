@@ -3,6 +3,9 @@
 
 WCE is an open-source development environment that mimics the WhatsApp Cloud API. It acts as a "Local Meta Server," allowing you to point your chatbot's API requests to your localhost and see the results instantly in a React-based mobile UI.
 
+> It's a full drop-in for WhatsApp server - allowing you to have zero changes when moving between WCE emulator and WhatsApp real testing or production on mobile
+
+![emulator-home](/screenshots/emulator.png)
 
 ## ⚡ Why WCE?
 
@@ -39,6 +42,18 @@ WCE consists of two lightweight components:
 2.  **The Emulator (React):** A responsive mobile UI that renders the messages and allows you to "reply" as a user, sending webhooks back to your bot.
 
 
+
+## 🚀 The WCE Chatbot Ecosystem
+
+WCE is an extension of my work building robust, template-driven, professional tools for the WhatsApp Cloud API. This project is designed to be the perfect testing environment for any chatbot built using my dedicated frameworks:
+
+| Framework | Language/Platform | Description |
+| :--- | :--- | :--- |
+| [**pywce**](https://github.com/DonnC/pywce) | Python | A **general-purpose Python framework** designed to abstract the complexities of the Cloud API, making it easy to build powerful bots with simple, elegant code. |
+| [**frappe-pywce**](https://github.com/DonnC/frappe_pywce) | Frappe/ERPNext | Built on pywce, this framework enables **seamless, deep integration** of WhatsApp bots with the Frappe/ERPNext ecosystem for enterprise-grade automation with a visual node based ui for conversational flows. |
+| [**jawce**](https://github.com/DonnC/jawce) | Java Springboot | A modern, high-performance framework for creating **Enterprise grade** chatbots, focusing on speed and modularity. |
+
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -71,7 +86,7 @@ WCE consists of two lightweight components:
     ```
 
       * **Emulator UI:** `http://localhost:8080`
-      * **Bridge API:** `http://localhost:3001` (or the port logged in terminal)
+      * **Bridge API:** `http://localhost:3001/send-to-emulator` (or the port logged in terminal)
 
 
 
@@ -86,13 +101,18 @@ To test your bot, you simply need to change the meta **Base URL** of your chatbo
 `http://localhost:3001/send-to-emulator`
 
 ### Example (Node.js / Axios)
+In your WhatsApp chatbot logic
 
 ```javascript
 const axios = require('axios');
 
+const EMULATOR_URL = 'http://localhost:3001/send-to-emulator';
+const META_WHATSAPP_URL =  'https://graph.facebook.com/<VERSION>/<PHONE_ID>/messages'; 
+
+
 // Toggle this based on your environment
 const IS_DEV = process.env.NODE_ENV === 'development';
-const BASE_URL = IS_DEV ? 'http://localhost:3001/send-to-emulator' : 'https://graph.facebook.com/v22.0/messages';
+const BASE_URL = IS_DEV ?  EMULATOR_URL : META_WHATSAPP_URL;
 
 await axios.post(BASE_URL, {
   messaging_product: "whatsapp",

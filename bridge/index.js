@@ -13,8 +13,6 @@ const PORT = 3001;
 // CONFIGURATION: Change this to your bot's webhook URL
 const BOT_WEBHOOK_URL = process.env.BOT_WEBHOOK_URL || "http://localhost:8000/api/whatsapp/webhook";
 
-console.log(`Forwarding replies to: ${BOT_WEBHOOK_URL}`);
-
 const app = express();
 const server = http.createServer(app);
 
@@ -84,12 +82,12 @@ io.on("connection", (socket) => {
 
 server.listen(PORT, () => {
   console.log(`
-╔══════════════════════════════════════════════════════════════════════════════════════════════════════════
-║   🚀 Local WhatsApp Bridge Server Running
-║                                                                                                         
+╔═══════════════════════════════════════════════════════════════════════
+║   🌉 Local WhatsApp Bridge Server Running
+║
 ║   Port: ${PORT}
-║   Bot sends to: POST /send-to-emulator
-║   Bot receives at: ${BOT_WEBHOOK_URL}
-╚══════════════════════════════════════════════════════════════════════════════════════════════════════════
+║   Bridge sends to:  [POST] http://localhost:${PORT}/send-to-emulator
+║   <YOUR CHATBOT WEBHOOK> ${BOT_WEBHOOK_URL}
+╚═══════════════════════════════════════════════════════════════════════
   `);
 });
