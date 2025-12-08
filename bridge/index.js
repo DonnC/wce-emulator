@@ -11,7 +11,7 @@ const { constructWebhookPayload } = require("./utils/webhookConstructor");
 const PORT = 3001;
 
 // TODO: Change this to your bot's webhook URL
-const BOT_WEBHOOK_URL = process.env.BOT_WEBHOOK_URL || "http://localhost:8000/api/whatsapp/webhook";
+const BOT_WEBHOOK_URL = process.env.BOT_WEBHOOK_URL || "http://localhost:8000/chatbot/webhook";
 
 const app = express();
 const server = http.createServer(app);
@@ -71,7 +71,7 @@ io.on("connection", (socket) => {
       const response = await axios.post(BOT_WEBHOOK_URL, fullWebhookPayload);
       console.log("📤 Sent to bot webhook. Response:", response.status);
     } catch (error) {
-      console.error("❌ [conn] Error sending to bot:", error.message);
+      console.error("❌ Error sending to bot:", error.message);
     }
   });
 
@@ -83,7 +83,7 @@ io.on("connection", (socket) => {
 server.listen(PORT, () => {
   console.log(`
 ╔═══════════════════════════════════════════════════════════════════════
-║   🌉 Local WhatsApp Bridge Server Running
+║   🌉 WCE Local Bridge 🌉
 ║
 ║   Port: ${PORT}
 ║   Bridge sends to:  [POST] http://localhost:${PORT}/send-to-emulator

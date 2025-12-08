@@ -17,7 +17,15 @@ function parseWhatsAppPayload(payload) {
         },
       };
 
+    case "reaction":
+      return {
+        id,
+        type: "reaction",
+        payload: payload.reaction,
+      };
+
     case "text_preview":
+      // FIXME: no type text_preview exists, use text to check for preview
       return {
         id,
         type: "text_preview",
@@ -144,6 +152,14 @@ function parseWhatsAppPayload(payload) {
     // TODO: add more supported message types
 
     default:
+      console.log(payload)
+      if("typing_indicator" in payload) {
+        return {
+          id,
+          type: "typing_indicator"
+        }
+      }
+
       throw new Error(`Unsupported message type: ${type}`);
   }
 }

@@ -107,6 +107,7 @@ export type MessageType =
   | 'interactive_button' 
   | 'interactive_list' 
   | 'interactive_cta'
+  | 'typing_indicator'
   | 'interactive_location_request'
   | 'reaction';
 

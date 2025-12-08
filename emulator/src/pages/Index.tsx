@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { SocketProvider, useSocket } from "@/context/SocketProvider";
 import { ChatWindow } from "@/components/ChatWindow";
 import { DemoToolbar } from "@/components/DemoToolbar";
 import { ChatMessage, SimpleUIMessage, UIReply } from "@/types/message";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { Trash2 } from 'lucide-react';
 import { useChatPersistence } from "@/hooks/use-chat-persistence";
 
 const Index = () => {
@@ -18,7 +17,6 @@ const Index = () => {
 
 const WhatsAppEmulator = () => {
   const { socket, isConnected } = useSocket();
-  // const [messages, setMessages] = useState<ChatMessage[]>([]);
   const { messages, setMessages, clearPersistence } = useChatPersistence();
 
   useEffect(() => {
@@ -34,7 +32,7 @@ const WhatsAppEmulator = () => {
         return;
       }
 
-      if ("typing_indicator" in simpleMessage) {
+      if (simpleMessage.type === "typing_indicator") {
         toast.info("Bot is typing...");
         return;
       }
@@ -50,7 +48,6 @@ const WhatsAppEmulator = () => {
       }
 
       addMessage(simpleMessage, "out");
-      // toast.success("New message from bot");
     });
 
     return () => {
@@ -140,7 +137,6 @@ const WhatsAppEmulator = () => {
     // Send to bridge
     if (socket) {
       socket.emit("ui_reply", reply);
-      // toast.success("Reply sent to bot");
     } else {
       toast.error("Not connected to bridge server");
     }
@@ -148,7 +144,6 @@ const WhatsAppEmulator = () => {
 
   const handleAddDemoMessage = (demoMessage: SimpleUIMessage) => {
     addMessage(demoMessage, "out");
-    // toast.info("Demo message added");
   };
 
   const handleClearMessages = () => {
