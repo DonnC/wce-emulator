@@ -292,6 +292,3 @@ const YOUR_BOT_WEBHOOK_URL = 'http://localhost:8000/webhook'; // Change this
 ## 📚 Documentation
 
 - Full contract specification: See `src/types/message.ts`
-
-
-Vibe-coded using [Lovable](https://lovable.dev)

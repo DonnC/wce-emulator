@@ -5,7 +5,7 @@ WCE is an open-source development environment that mimics the WhatsApp Cloud API
 
 > It's a full drop-in for WhatsApp server - allowing you to have zero changes when moving between WCE emulator and WhatsApp real testing or production on mobile
 
-![emulator-home](/screenshots/emulator.png)
+![overview](screenshots/overview.png)
 
 ## ⚡ Why WCE?
 
@@ -55,6 +55,8 @@ WCE is an extension of my work building robust, template-driven, professional to
 
 
 ## 🚀 Getting Started
+
+![emulator-home](/screenshots/emulator.png)
 
 ### Prerequisites
 
