@@ -62,6 +62,8 @@ export const MessageRenderer = ({ message, onReply }: MessageRendererProps) => {
         );
       case 'interactive_cta':
         return <CtaMessage payload={payload as any} />;
+      case 'typing_indicator':
+        return <TypingIndicator />;
       default:
         return <div>Unsupported message type: {type}</div>;
     }

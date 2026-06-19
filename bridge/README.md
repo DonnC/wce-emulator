@@ -1,18 +1,99 @@
-# Local WhatsApp Emulator Bridge
+# Local Emulator Bridge
 
-**⚠️ IMPORTANT:** You must run it separately on your local machine or server.
+The bridge now supports two channels:
 
+- WhatsApp message relay
+- vendor-agnostic USSD screen relay
 
-The bridge works in a way which is easy to add more supported whatsapp messages.
+It keeps the UI contract simple so the emulator can render a stable local experience while your backend stays free to use richer native payloads.
 
-It converts the webhooks messages into a simple basic contract that the `emulator` will use.
+## Endpoints
 
-It will also translate back this simple contract from `emulator` into a full whatsapp webhook payload and respond to the bot.
+- `POST /send-to-emulator`
+  Accepts WhatsApp-style outbound payloads and translates them to the emulator UI contract.
+- `POST /send-ussd-to-emulator`
+  Accepts a normalized USSD screen, or a `jussd`-like outbound screen shape, and pushes it to the USSD emulator tab.
 
+## Environment variables
 
-## Testing the Bridge Server
+- `BOT_WEBHOOK_URL`
+  Target webhook used for WhatsApp replies from the emulator.
+- `BOT_USSD_WEBHOOK_URL`
+  Target webhook used for synchronous USSD requests from the emulator.
 
-### 1. Test Text Message
+## USSD normalized request shape
+
+When the user interacts with the USSD emulator, the bridge posts a request like:
+
+```json
+{
+  "channel": "ussd-emulator",
+  "action": "dial",
+  "sessionId": "ussd-123",
+  "msisdn": "263771234567",
+  "shortCode": "*151#",
+  "userInput": "",
+  "metadata": {
+    "emulator": true
+  }
+}
+```
+
+`action` can be `dial`, `reply`, `end`, or `reset`.
+
+## USSD normalized screen shape
+
+Your backend can respond with a simple payload like:
+
+```json
+{
+  "sessionId": "ussd-123",
+  "title": "SME Services",
+  "stage": "HOME",
+  "body": "1. Airtime\n2. ZESA\n3. Bundles",
+  "prompt": "Reply with menu option",
+  "terminal": false,
+  "shortCode": "*151#",
+  "msisdn": "263771234567",
+  "options": [
+    { "key": "1", "label": "Airtime" },
+    { "key": "2", "label": "ZESA" },
+    { "key": "3", "label": "Bundles" }
+  ]
+}
+```
+
+It can also respond with a `jussd`-style object using `body`, `menuItems`, `terminal`, `stage`, and `vendorHints`; the bridge will normalize that automatically.
+
+## Manual USSD screen test
+
+```bash
+curl -X POST http://localhost:3001/send-ussd-to-emulator \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionId": "demo-ussd-1",
+    "title": "SME Services",
+    "stage": "HOME",
+    "body": "1. Airtime\n2. ZESA\n3. Bundles\n*. Next",
+    "prompt": "Reply with menu option",
+    "terminal": false,
+    "shortCode": "*151#",
+    "msisdn": "263771234567",
+    "options": [
+      { "key": "1", "label": "Airtime" },
+      { "key": "2", "label": "ZESA" },
+      { "key": "3", "label": "Bundles" },
+      { "key": "*", "label": "Next page", "kind": "navigation" }
+    ],
+    "pagination": {
+      "page": 1,
+      "totalPages": 2,
+      "nextToken": "*"
+    }
+  }'
+```
+
+## Manual WhatsApp test
 
 ```bash
 curl -X POST http://localhost:3001/send-to-emulator \
@@ -21,198 +102,6 @@ curl -X POST http://localhost:3001/send-to-emulator \
     "type": "text",
     "text": {
       "body": "Hello from the bot!"
-    }
-  }'
-```
-
-
-### 2. Test Button Message
-
-```bash
-curl -X POST http://localhost:3001/send-to-emulator \
-  -H "Content-Type: application/json" \
-  -d '{
-    "type": "interactive",
-    "interactive": {
-      "type": "button",
-      "header": {
-        "text": "Choose an Action"
-      },
-      "body": {
-        "text": "Please select one of the options below."
-      },
-      "footer": {
-        "text": "pywce"
-      },
-      "action": {
-        "buttons": [
-          {
-            "type": "reply",
-            "reply": {
-              "id": "btn-yes",
-              "title": "Yes"
-            }
-          },
-          {
-            "type": "reply",
-            "reply": {
-              "id": "btn-no",
-              "title": "No"
-            }
-          }
-        ]
-      }
-    }
-  }'
-```
-
-### 3. Test List Message
-
-```bash
-curl -X POST http://localhost:3001/send-to-emulator \
-  -H "Content-Type: application/json" \
-  -d '{
-    "type": "interactive",
-    "interactive": {
-      "type": "list",
-      "header": {
-        "text": "Main Menu"
-      },
-      "body": {
-        "text": "Choose from the options below."
-      },
-      "footer": {
-        "text": "Select an option"
-      },
-      "action": {
-        "button": "View Menu",
-        "sections": [
-          {
-            "title": "Category A",
-            "rows": [
-              {
-                "id": "opt-1",
-                "title": "Option 1",
-                "description": "First option"
-              },
-              {
-                "id": "opt-2",
-                "title": "Option 2",
-                "description": "Second option"
-              }
-            ]
-          }
-        ]
-      }
-    }
-  }'
-```
-
-### 4. Test CTA URL Message
-
-```bash
-curl -X POST http://localhost:3001/send-to-emulator \
-  -H "Content-Type: application/json" \
-  -d '{
-    "type": "interactive",
-    "interactive": {
-      "type": "cta_url",
-      "header": {
-        "text": "Author GitHub"
-      },
-      "body": {
-        "text": "Thank you for checking out my work. Check more exciting projects on my GitHub profile below"
-      },
-      "action": {
-        "parameters": {
-          "display_text": "Visit GitHub",
-          "url": "https://github.com/DonnC"
-        }
-      }
-    }
-  }'
-```
-
-### 5. Test Location Message
-
-```bash
-curl -X POST http://localhost:3001/send-to-emulator \
-  -H "Content-Type: application/json" \
-  -d '{
-    "type": "location",
-    "location": {
-      "latitude": -17.8216,
-      "longitude": 31.0492,
-      "name": "Harare",
-      "address": "Capital of Zimbabwe"
-    }
-  }'
-```
-
-### 6. Test Image Message
-
-```bash
-curl -X POST http://localhost:3001/send-to-emulator \
-  -H "Content-Type: application/json" \
-  -d '{
-    "type": "image",
-    "image": {
-      "link": "https://picsum.photos/400/300",
-      "caption": "This is a sample image from the bot"
-    }
-  }'
-```
-
-### 7. Test Video Message
-
-```bash
-curl -X POST http://localhost:3001/send-to-emulator \
-  -H "Content-Type: application/json" \
-  -d '{
-    "type": "video",
-    "video": {
-      "link": "https://www.w3schools.com/html/mov_bbb.mp4",
-      "caption": "Sample video message"
-    }
-  }'
-```
-
-### 8. Test Document Message
-
-```bash
-curl -X POST http://localhost:3001/send-to-emulator \
-  -H "Content-Type: application/json" \
-  -d '{
-    "type": "document",
-    "document": {
-      "link": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
-      "filename": "sample-document.pdf",
-      "caption": "Here is a document for you"
-    }
-  }'
-```
-
-### 9. Test Location Request Message
-
-```bash
-curl -X POST http://localhost:3001/send-to-emulator \
-  -H "Content-Type: application/json" \
-  -d '{
-    "type": "interactive",
-    "interactive": {
-      "type": "location_request_message",
-      "header": {
-        "text": "Share Your Location"
-      },
-      "body": {
-        "text": "Please share your location so we can find nearby stores."
-      },
-      "footer": {
-        "text": "Your privacy is important to us"
-      },
-      "action": {
-        "name": "send_location"
-      }
     }
   }'
 ```

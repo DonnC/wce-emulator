@@ -11,7 +11,7 @@ WCE is an open-source development environment that mimics the WhatsApp Cloud API
 
 Building chatbots is usually a pain:
 
-  * ❌ **Slow feedback loops:** Send code -\> Deploy -\> Test on physical device.
+  * ❌ **Slow feedback loops:** Send code -> Deploy -> Test on physical device.
   * ❌ **Cost:** Message fees during high-volume testing.
   * ❌ **Tedious setup:** Long journeys of whatsapp setup -> webhook verify -> code -> deploy -> test on phone...
 
@@ -30,7 +30,7 @@ Building chatbots is usually a pain:
 ┌─────────────┐      Full WA Payload     ┌──────────────┐      Simple JSON      ┌─────────────┐
 │             │  ──────────────────────> │              │  ──────────────────>  │             │
 │  Your Bot   │                          │    Bridge    │                       │  React UI   │
-│             │  <────────────────────── │    Server    │  <──────────────────  │  Emulator   │
+│             │  <────────────────────── │    Server    │  <─────────────────   │  Emulator   │
 └─────────────┘      Full WA Webhook     └──────────────┘      Simple Reply     └─────────────┘
                                            (Translator)
 ```
@@ -86,7 +86,6 @@ WCE is an extension of my work building robust, template-driven, professional to
     Or edit the line in [bridge/index.js](/bridge/index.js)
 
     ```js
-    // TODO: Change this to your bot's webhook URL
     const BOT_WEBHOOK_URL = process.env.BOT_WEBHOOK_URL || "<YOUR-CHATBOT-WEBHOOK-URL>";
     ```
 
@@ -122,7 +121,6 @@ const EMULATOR_URL = 'http://localhost:3001/send-to-emulator';
 const META_WHATSAPP_URL =  'https://graph.facebook.com/<VERSION>/<PHONE_ID>/messages'; 
 
 
-// Toggle this based on your environment
 const IS_DEV = process.env.NODE_ENV === 'development';
 const BASE_URL = IS_DEV ?  EMULATOR_URL : META_WHATSAPP_URL;
 
@@ -134,9 +132,43 @@ await axios.post(BASE_URL, {
 });
 ```
 
-That's it\! Your bot thinks it's talking to Meta, but WCE intercepts the message and renders it.
+That's it! Your bot thinks it's talking to Meta, but WCE intercepts the message and renders it.
 
------
+## 📟 USSD Emulator
+
+WCE now also includes a vendor-agnostic USSD emulator alongside the WhatsApp emulator.
+
+### How to access it
+
+1. Run `npm run dev`
+2. Open `http://localhost:8080`
+3. At the top of the page, use the **Channel Emulator** switch
+4. Click **USSD Emulator**
+
+Inside the USSD screen:
+
+- use the visible **USSD Demo Toolbar** for quick sample sessions
+- or enter an MSISDN and shortcode, then press **Dial**
+- for the SME `jussd` example, use shortcode `484`
+
+### Live backend wiring
+
+The USSD emulator does not require you to change your app logic between emulator and real vendor use.
+
+- emulator path: normalized JSON to your emulator-facing endpoint
+- vendor path: vendor adapter payloads such as NetOne XML
+
+For the SME `jussd` example, point the bridge to:
+
+```bash
+BOT_USSD_WEBHOOK_URL=http://localhost:8092/ussd/emulator
+```
+
+The bridge can also accept direct USSD screen pushes at:
+
+```text
+POST http://localhost:3001/send-ussd-to-emulator
+```
 
 ## 🛠️ Supported Features
 
@@ -148,20 +180,17 @@ That's it\! Your bot thinks it's talking to Meta, but WCE intercepts the message
 | **Interactive** | ✅ Supported | Reply Buttons, List Messages |
 | **Reactions** | ✅ Supported | Shows toast notification |
 | **Status** | ✅ Supported | 'Sent', 'Delivered', 'Read' |
-
------
+| **USSD Sessions** | ✅ Supported | Vendor-agnostic normalized session emulator |
 
 ## 🤝 Contributing
 
-We believe tools like this should be community-driven. Whether it's fixing a bug, adding support for a new message type (like Catalogues or Flows), or improving the UI, your help is welcome\!
+We believe tools like this should be community-driven. Whether it's fixing a bug, adding support for a new message type (like Catalogues or Flows), or improving the UI, your help is welcome!
 
 1.  Fork the Project
 2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
 3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
 4.  Push to the Branch (`git push origin feature/AmazingFeature`)
 5.  Open a Pull Request
-
------
 
 ## ☕ Support the Project
 
@@ -174,8 +203,6 @@ Open source is fueled by passion and caffeine. If WCE saved you hours of debuggi
   * Or use the Sponsor button at the top of this page for more options
 
 *Your support ensures this tool and other projects i do stays up-to-date with the ever-changing WhatsApp API.*
-
------
 
 ## 👨‍💻 Need a Custom Chatbot Solution?
 
@@ -194,8 +221,6 @@ While WCE is a great tool for developers, sometimes you need a complete, turnkey
 If you are looking to build a serious conversational interface for your business, let's talk.
 
 [**📩 Contact Me for Consulting**](mailto:donychinhuru@gmail.com) | [**🌐 My Portfolio**](https://github.com/DonnC) | [**👔 LinkedIn**](https://www.linkedin.com/in/donchinhuru/)
-
------
 
 **License**
 Distributed under the MIT License. See `LICENSE` for more information.
