@@ -581,17 +581,17 @@ export const UssdEmulator = () => {
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
-                      className="flex-1 h-11 rounded-xl bg-slate-800/50 border-slate-700/50 text-slate-400 hover:bg-slate-800 hover:text-white transition-all text-xs"
+                      className="flex-1 h-11 rounded-xl bg-red-950/30 border-red-900/40 text-red-400 hover:bg-red-900/40 hover:text-red-300 hover:border-red-700/50 transition-all text-xs"
                       onClick={() => handleEnd()}
                       disabled={isRequestPending || (!activeScreen && !isSessionClosed)}
                     >
                       <PhoneOff className="w-3.5 h-3.5 mr-2" />
-                      Cancel Session
+                      End
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-11 w-11 rounded-xl text-slate-500 hover:bg-slate-800/50"
+                      className="h-11 w-11 rounded-xl text-slate-600 hover:bg-slate-800/50 hover:text-slate-400"
                       onClick={handleClear}
                       title="Clear session"
                     >
@@ -606,19 +606,19 @@ export const UssdEmulator = () => {
           {/* Session Activity Trail */}
           <div className="flex-1 flex flex-col min-w-0 h-[640px]">
             <Card className="flex-1 flex flex-col overflow-hidden shadow-sm border-muted">
-              <CardHeader className="py-4 px-5 border-b bg-muted/10 flex flex-row items-center justify-between shrink-0">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <History className="w-4 h-4 text-primary" />
-                  Interaction Trail
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="font-mono text-[10px] font-normal">
-                    {state.transcript.length} Actions
-                  </Badge>
-                  <Button variant="ghost" size="icon" onClick={handleClear} className="w-8 h-8 rounded-lg text-muted-foreground hover:text-destructive">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+              <CardHeader className="py-3 px-4 border-b bg-muted/10 flex flex-row items-center justify-between shrink-0">
+                <div className="flex items-center gap-1.5">
+                  <History className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Trail</span>
+                  {state.transcript.length > 0 && (
+                    <span className="text-[10px] font-mono bg-muted text-muted-foreground rounded-full px-1.5 py-0.5 leading-none">
+                      {state.transcript.length}
+                    </span>
+                  )}
                 </div>
+                <Button variant="ghost" size="icon" onClick={handleClear} className="w-7 h-7 rounded-lg text-muted-foreground/50 hover:text-destructive" title="Clear trail">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
               </CardHeader>
               <CardContent className="flex-1 min-h-0 p-0 flex flex-col bg-slate-50/30">
                 <ScrollArea className="flex-1">
@@ -630,41 +630,40 @@ export const UssdEmulator = () => {
                         <p className="text-xs max-w-[180px]">Your session history will appear here as you interact.</p>
                       </div>
                     ) : (
-                      <div className="space-y-6 relative">
+                      <div className="space-y-3 relative">
                         {/* Timeline line */}
-                        <div className="absolute left-[13px] top-2 bottom-2 w-px bg-muted-foreground/10" />
+                        <div className="absolute left-[11px] top-2 bottom-2 w-px bg-muted-foreground/10" />
 
                         {state.transcript.map((entry) => (
                           <div
                             key={entry.id}
-                            className={`relative pl-8 flex flex-col gap-2 ${entry.direction === "system" ? "opacity-70" : ""
-                              }`}
+                            className={`relative pl-7 flex flex-col gap-1 ${entry.direction === "system" ? "opacity-60" : ""}`}
                           >
                             {/* Timeline dot */}
-                            <div className={`absolute left-0 top-2 w-7 h-7 rounded-full border-4 border-background flex items-center justify-center z-10 ${entry.direction === "engine" ? "bg-emerald-500" :
-                              entry.direction === "user" ? "bg-sky-500" : "bg-muted-foreground/30"
+                            <div className={`absolute left-0 top-1.5 w-[22px] h-[22px] rounded-full border-[3px] border-background flex items-center justify-center z-10 ${entry.direction === "engine" ? "bg-emerald-500" :
+                                entry.direction === "user" ? "bg-sky-500" : "bg-muted-foreground/30"
                               }`}>
-                              {entry.direction === "engine" && <Smartphone className="w-3 h-3 text-white" />}
-                              {entry.direction === "user" && <Send className="w-3 h-3 text-white" />}
-                              {entry.direction === "system" && <Clock className="w-3 h-3 text-white" />}
+                              {entry.direction === "engine" && <Smartphone className="w-2.5 h-2.5 text-white" />}
+                              {entry.direction === "user" && <Send className="w-2.5 h-2.5 text-white" />}
+                              {entry.direction === "system" && <Clock className="w-2.5 h-2.5 text-white" />}
                             </div>
 
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
-                                {entry.direction === "engine" ? "Emulator" : entry.direction === "user" ? "Your Input" : "System"}
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/50">
+                                {entry.direction === "engine" ? "Engine" : entry.direction === "user" ? "You" : "Sys"}
                               </span>
-                              <span className="text-[10px] text-muted-foreground/40 font-medium">
+                              <span className="text-[9px] text-muted-foreground/30 font-mono">
                                 {new Date(entry.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                               </span>
                             </div>
 
-                            <div className={`rounded-2xl px-5 py-3 text-sm font-mono shadow-sm border transition-all ${entry.direction === "engine"
-                              ? "bg-white border-emerald-100 text-slate-700"
-                              : entry.direction === "user"
-                                ? "bg-sky-50 border-sky-100 text-sky-900"
-                                : "bg-muted/50 border-muted text-muted-foreground italic rounded-xl"
+                            <div className={`rounded-xl px-3 py-2 font-mono border transition-all ${entry.direction === "engine"
+                                ? "bg-white border-emerald-100 text-slate-700"
+                                : entry.direction === "user"
+                                  ? "bg-sky-50 border-sky-100 text-sky-900"
+                                  : "bg-muted/40 border-muted text-muted-foreground italic"
                               }`}>
-                              <pre className="whitespace-pre-wrap break-words leading-relaxed text-[12px]">{entry.text}</pre>
+                              <pre className="whitespace-pre-wrap break-words leading-snug text-[10px]">{entry.text}</pre>
                             </div>
                           </div>
                         ))}
