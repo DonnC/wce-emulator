@@ -10,7 +10,7 @@ const { normalizeUssdPayload } = require("./utils/ussdPayloadParser");
 
 const PORT = 3001;
 const BOT_WEBHOOK_URL = process.env.BOT_WEBHOOK_URL || "http://localhost:8000/chatbot/webhook";
-const BOT_USSD_WEBHOOK_URL = process.env.BOT_USSD_WEBHOOK_URL || "http://localhost:8080/ussd/emulator";
+const BOT_USSD_WEBHOOK_URL = process.env.BOT_USSD_WEBHOOK_URL || "http://localhost:8092/ussd/emulator";
 
 const app = express();
 const server = http.createServer(app);

@@ -162,23 +162,20 @@ _Italic Text_
     <div className="border-t bg-card">
       <Accordion type="single" collapsible className="w-full">
         <AccordionItem value="demo-toolbar" className="border-none">
-          <AccordionTrigger className="px-4 py-3 hover:no-underline">
-            <div className="flex items-center justify-between w-full pr-2">
+          <div className="px-4 py-3 flex items-center justify-between gap-3">
+            <AccordionTrigger className="hover:no-underline py-0">
               <h3 className="font-semibold text-sm">Demo Toolbar</h3>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClear();
-                }}
-                className="text-destructive hover:bg-destructive/10"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Clear
-              </Button>
-            </div>
-          </AccordionTrigger>
+            </AccordionTrigger>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onClear}
+              className="text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Clear
+            </Button>
+          </div>
           <AccordionContent className="px-4 pb-4 space-y-3">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <Button

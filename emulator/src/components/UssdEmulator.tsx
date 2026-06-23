@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSocket } from "@/context/SocketProvider";
 import { useUssdPersistence } from "@/hooks/use-ussd-persistence";
 import { UssdScreen, UssdSessionRequest, UssdTranscriptEntry } from "@/types/ussd";
@@ -7,10 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { BookOpenText, Eraser, Phone, PhoneOff, Send } from "lucide-react";
+import { CheckCircle2, Grip, ListOrdered, MessageSquareQuote, Phone, PhoneOff, Send } from "lucide-react";
 
 const nowIso = () => new Date().toISOString();
 
@@ -22,7 +21,7 @@ const buildTranscriptText = (screen: UssdScreen) => {
 const bankingDemo: UssdScreen = {
   sessionId: "demo-banking-session",
   title: "Banking",
-  body: "Welcome to MobiBank\n1. Balance\n2. Mini statement\n3. Transfer funds\n4. Reset PIN",
+  body: "Welcome to MobiBank",
   prompt: "Reply with menu option",
   stage: "BANK_HOME",
   shortCode: "*200#",
@@ -39,7 +38,7 @@ const bankingDemo: UssdScreen = {
 const billsDemo: UssdScreen = {
   sessionId: "demo-bills-session",
   title: "Bills & Prepaid",
-  body: "SME Services\n1. Airtime\n2. ZESA\n3. School fees\n4. Bundles\n5. Wallet balance",
+  body: "SME Services",
   prompt: "Reply with menu option",
   stage: "HOME",
   shortCode: "*151#",
@@ -60,15 +59,62 @@ const billsDemo: UssdScreen = {
   },
 };
 
+const inputDemo: UssdScreen = {
+  sessionId: "demo-input-session",
+  title: "Meter Entry",
+  body: "Enter your ZESA meter number",
+  prompt: "Enter customer input",
+  stage: "CAPTURE_METER",
+  shortCode: "484",
+  msisdn: "263771234567",
+  terminal: false,
+  options: [],
+};
+
+const confirmDemo: UssdScreen = {
+  sessionId: "demo-confirm-session",
+  title: "Confirm Payment",
+  body: "Buy airtime for 0771234567 amount $5.00?",
+  prompt: "1 to confirm, 2 to cancel",
+  stage: "CONFIRM_PURCHASE",
+  shortCode: "484",
+  msisdn: "263771234567",
+  terminal: false,
+  options: [
+    { key: "1", label: "Confirm" },
+    { key: "2", label: "Cancel" },
+  ],
+};
+
+const terminalDemo: UssdScreen = {
+  sessionId: "demo-terminal-session",
+  title: "Session Complete",
+  body: "Transaction successful. Reference: TXN-20481",
+  prompt: "Session complete",
+  stage: "DONE",
+  shortCode: "484",
+  msisdn: "263771234567",
+  terminal: true,
+  options: [],
+};
+
 export const UssdEmulator = () => {
   const { socket, isConnected } = useSocket();
   const { state, setState, reset } = useUssdPersistence();
   const [inputValue, setInputValue] = useState("");
+  const [isRequestPending, setIsRequestPending] = useState(false);
+  const [isSessionClosed, setIsSessionClosed] = useState(false);
+  const closeTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!socket) return;
 
     const onMessage = (screen: UssdScreen) => {
+      if (closeTimerRef.current) {
+        window.clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+
       const transcriptEntry: UssdTranscriptEntry = {
         id: `screen-${Date.now()}-${Math.random()}`,
         direction: "engine",
@@ -86,13 +132,31 @@ export const UssdEmulator = () => {
         msisdn: screen.msisdn || prev.msisdn,
         transcript: [...prev.transcript, transcriptEntry],
       }));
+      setIsRequestPending(false);
+      setIsSessionClosed(false);
 
       if (screen.terminal) {
         toast.success("USSD session ended");
+        closeTimerRef.current = window.setTimeout(() => {
+          setIsSessionClosed(true);
+          setState((prev) => ({
+            ...prev,
+            transcript: [
+              ...prev.transcript,
+              {
+                id: `closed-${Date.now()}-${Math.random()}`,
+                direction: "system",
+                text: "USSD session closed. Dial again to start a new session.",
+                timestamp: nowIso(),
+              },
+            ],
+          }));
+        }, 2200);
       }
     };
 
     const onError = (error: { message?: string }) => {
+      setIsRequestPending(false);
       toast.error(error?.message || "USSD bridge request failed");
     };
 
@@ -100,6 +164,10 @@ export const UssdEmulator = () => {
     socket.on("ussd_error", onError);
 
     return () => {
+      if (closeTimerRef.current) {
+        window.clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
       socket.off("ussd_message", onMessage);
       socket.off("ussd_error", onError);
     };
@@ -108,9 +176,11 @@ export const UssdEmulator = () => {
   const activeScreen = state.currentScreen;
 
   const sessionStatus = useMemo(() => {
+    if (isRequestPending) return "Waiting";
+    if (isSessionClosed) return "Session closed";
     if (!activeScreen) return "Ready to dial";
     return activeScreen.terminal ? "Session complete" : "Session active";
-  }, [activeScreen]);
+  }, [activeScreen, isRequestPending, isSessionClosed]);
 
   const appendUserEntry = (text: string) => {
     setState((prev) => ({
@@ -132,6 +202,8 @@ export const UssdEmulator = () => {
       toast.error("Not connected to bridge server");
       return;
     }
+    setIsRequestPending(true);
+    setIsSessionClosed(false);
     socket.emit("ui_ussd_request", request);
   };
 
@@ -149,6 +221,7 @@ export const UssdEmulator = () => {
     };
 
     setState((prev) => ({ ...prev, sessionId: request.sessionId }));
+    appendUserEntry(`Dial ${state.shortCode}`);
     emitRequest(request);
   };
 
@@ -172,7 +245,25 @@ export const UssdEmulator = () => {
   };
 
   const handleEnd = () => {
-    appendUserEntry("END");
+    appendUserEntry("Cancel session");
+    if (!socket) {
+      setIsSessionClosed(true);
+      setIsRequestPending(false);
+      setState((prev) => ({
+        ...prev,
+        currentScreen: prev.currentScreen
+          ? {
+              ...prev.currentScreen,
+              terminal: true,
+              title: "USSD End",
+              body: "Session cancelled by user",
+              prompt: "Dial again to start a new session",
+              options: [],
+            }
+          : null,
+      }));
+      return;
+    }
     emitRequest({
       channel: "ussd-emulator",
       action: "end",
@@ -184,16 +275,6 @@ export const UssdEmulator = () => {
         emulator: true,
       },
     });
-    setState((prev) => ({
-      ...prev,
-      currentScreen: prev.currentScreen
-        ? {
-            ...prev.currentScreen,
-            terminal: true,
-            prompt: "Session closed",
-          }
-        : null,
-    }));
   };
 
   const handleLoadDemo = (screen: UssdScreen) => {
@@ -224,8 +305,14 @@ export const UssdEmulator = () => {
   };
 
   const handleClear = () => {
+    if (closeTimerRef.current) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
     reset();
     setInputValue("");
+    setIsRequestPending(false);
+    setIsSessionClosed(false);
     toast.success("USSD session cleared");
   };
 
@@ -244,7 +331,7 @@ export const UssdEmulator = () => {
           <Badge variant={isConnected ? "default" : "secondary"} className="text-xs">
             {isConnected ? "Connected" : "Bridge Offline"}
           </Badge>
-          <Badge variant={activeScreen?.terminal ? "secondary" : "outline"} className="text-xs">
+          <Badge variant={isSessionClosed || activeScreen?.terminal ? "secondary" : "outline"} className="text-xs">
             {sessionStatus}
           </Badge>
         </div>
@@ -252,7 +339,7 @@ export const UssdEmulator = () => {
 
       <div className="flex-1 overflow-hidden bg-[radial-gradient(circle_at_top,_hsl(210_20%_98%),_hsl(220_15%_92%))] p-4">
         <Card className="h-full border-0 shadow-none bg-transparent">
-          <CardContent className="p-0 h-full flex flex-col gap-4">
+          <CardContent className="p-0 h-full overflow-y-auto pr-1 flex flex-col gap-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">MSISDN</label>
@@ -264,11 +351,16 @@ export const UssdEmulator = () => {
               </div>
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">Short code</label>
-                <Input
-                  value={state.shortCode}
-                  onChange={(e) => setState((prev) => ({ ...prev, shortCode: e.target.value }))}
-                  placeholder="484 or *151#"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    value={state.shortCode}
+                    onChange={(e) => setState((prev) => ({ ...prev, shortCode: e.target.value }))}
+                    placeholder="484 or *151#"
+                  />
+                  <Button variant="outline" size="icon" onClick={handleDial} title="Dial shortcode">
+                    <Phone className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -283,8 +375,17 @@ export const UssdEmulator = () => {
                   {formattedScreenText}
                 </pre>
                 <div className="pt-3 text-[11px] text-emerald-500/80">
-                  {activeScreen?.prompt || "Reply and press Send"}
+                  {isRequestPending
+                    ? "Loading..."
+                    : isSessionClosed
+                      ? "Dial again to start a new session"
+                      : activeScreen?.prompt || "Reply and press Send"}
                 </div>
+                {isRequestPending && (
+                  <div className="pt-2 text-[11px] text-emerald-400/70 animate-pulse">
+                    Processing request...
+                  </div>
+                )}
                 {activeScreen?.pagination && (
                   <div className="pt-2 text-[11px] text-emerald-400/70">
                     Page {activeScreen.pagination.page || 1}
@@ -307,19 +408,13 @@ export const UssdEmulator = () => {
                   }
                 }}
                 placeholder="Enter USSD reply"
-                disabled={Boolean(activeScreen?.terminal)}
+                disabled={Boolean(activeScreen?.terminal) || isRequestPending || isSessionClosed}
               />
-              <Button variant="outline" onClick={handleDial}>
-                <Phone className="w-4 h-4 mr-2" />
-                Dial
+              <Button size="icon" onClick={handleSend} disabled={!inputValue.trim() || Boolean(activeScreen?.terminal) || isRequestPending || isSessionClosed} title="Send reply">
+                <Send className="w-4 h-4" />
               </Button>
-              <Button onClick={handleSend} disabled={!inputValue.trim() || Boolean(activeScreen?.terminal)}>
-                <Send className="w-4 h-4 mr-2" />
-                Send
-              </Button>
-              <Button variant="secondary" onClick={handleEnd}>
-                <PhoneOff className="w-4 h-4 mr-2" />
-                End
+              <Button variant="secondary" size="icon" onClick={handleEnd} disabled={isRequestPending} title="Cancel or end session">
+                <PhoneOff className="w-4 h-4" />
               </Button>
             </div>
 
@@ -327,24 +422,37 @@ export const UssdEmulator = () => {
               <div className="text-sm font-medium mb-2">USSD Demo Toolbar</div>
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" onClick={() => handleLoadDemo(bankingDemo)}>
-                  Banking Demo
+                  <ListOrdered className="w-4 h-4 mr-2" />
+                  Menu
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => handleLoadDemo(billsDemo)}>
-                  SME Demo
+                  <Grip className="w-4 h-4 mr-2" />
+                  Paginated
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleLoadDemo(inputDemo)}>
+                  <MessageSquareQuote className="w-4 h-4 mr-2" />
+                  Input
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleLoadDemo(confirmDemo)}>
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  Confirm
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleLoadDemo(terminalDemo)}>
+                  <PhoneOff className="w-4 h-4 mr-2" />
+                  Terminal
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleClear} className="text-destructive">
                   Clear
                 </Button>
               </div>
               <div className="text-xs text-muted-foreground mt-2">
-                Use these quick actions just like the WhatsApp example toolbar, or dial a live backend session.
+                Quick offline USSD states for menu, pagination, input, confirm, and session termination.
               </div>
             </div>
 
             <Tabs defaultValue="history" className="flex-1 flex flex-col min-h-0">
-              <TabsList className="grid grid-cols-2">
+              <TabsList className="grid grid-cols-1">
                 <TabsTrigger value="history">Session Trail</TabsTrigger>
-                <TabsTrigger value="demo">Demo Screens</TabsTrigger>
               </TabsList>
               <TabsContent value="history" className="flex-1 min-h-0 mt-3">
                 <div className="rounded-xl border bg-background/80 h-full overflow-y-auto p-3 space-y-2">
@@ -373,30 +481,6 @@ export const UssdEmulator = () => {
                     ))
                   )}
                 </div>
-              </TabsContent>
-              <TabsContent value="demo" className="mt-3">
-                <Accordion type="single" collapsible className="w-full border rounded-xl bg-background/80 px-3">
-                  <AccordionItem value="demo-screens" className="border-none">
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center gap-2">
-                        <BookOpenText className="w-4 h-4" />
-                        <span className="text-sm font-medium">Load realistic sample screens</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-3 pb-3">
-                      <Button variant="outline" className="w-full justify-start" onClick={() => handleLoadDemo(bankingDemo)}>
-                        Banking home screen
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start" onClick={() => handleLoadDemo(billsDemo)}>
-                        SME bills with pagination hint
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start text-destructive" onClick={handleClear}>
-                        <Eraser className="w-4 h-4 mr-2" />
-                        Clear USSD state
-                      </Button>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
               </TabsContent>
             </Tabs>
           </CardContent>

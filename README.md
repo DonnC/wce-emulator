@@ -1,5 +1,5 @@
-# 📱 WCE: WhatsApp Cloud Emulator
-**Develop, Test, and Debug WhatsApp Chatbots locally. Zero configs, Zero public server, Zero phone testing.**
+# 📱 WhatsApp | USSD Emulator
+**Develop, Test, and Debug WhatsApp Chatbots or USSD locally. Zero configs, Zero public server, Zero phone testing.**
 
 WCE is an open-source development environment that mimics the WhatsApp Cloud API. It acts as a "Local Meta Server," allowing you to point your chatbot's API requests to your localhost and see the results instantly in a React-based mobile UI.
 
@@ -147,7 +147,7 @@ WCE now also includes a vendor-agnostic USSD emulator alongside the WhatsApp emu
 
 Inside the USSD screen:
 
-- use the visible **USSD Demo Toolbar** for quick sample sessions
+- use the visible **USSD Demo Toolbar** for quick offline USSD states like menu, paginated menu, input, confirm, and terminal screens
 - or enter an MSISDN and shortcode, then press **Dial**
 - for the SME `jussd` example, use shortcode `484`
 
